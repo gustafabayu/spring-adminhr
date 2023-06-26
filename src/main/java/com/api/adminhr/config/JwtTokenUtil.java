@@ -49,4 +49,8 @@ public class JwtTokenUtil {
         Claims claims = Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(token).getBody();
         return claims.getSubject();
     }
+
+    public String extractPhoneNumberFromToken(String token) {
+        return getPhoneNumberFromToken(token);
+    }
 }

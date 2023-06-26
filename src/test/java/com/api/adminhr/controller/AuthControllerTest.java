@@ -1,49 +1,62 @@
 package com.api.adminhr.controller;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mockito;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.api.adminhr.model.User;
 import com.api.adminhr.service.UserService;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import com.api.adminhr.config.JwtTokenUtil;
+import org.springframework.http.MediaType;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.Mockito.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 
+@ExtendWith(SpringExtension.class)
+@WebMvcTest(AuthController.class)
 public class AuthControllerTest {
-    @Mock
+    @Autowired
+    private MockMvc mockMvc;
+
+    @MockBean
     private UserService userService;
 
-    @InjectMocks
-    private AuthController authController;
+    @MockBean
+    private PasswordEncoder passwordEncoder;
 
-    @BeforeEach
-    void setUp() {
-        MockitoAnnotations.openMocks(this);
-    }
+    @MockBean
+    private JwtTokenUtil jwtTokenUtil;
 
     @Test
-    void registerUser_Success() {
-        // Mock input
+    public void testRegisterUser() throws Exception {
         User user = new User();
         user.setPhoneNumber("1234567890");
         user.setName("John Doe");
-        user.setPassword("Password123");
+        user.setPassword("password");
 
-        // Mock service response
-        when(userService.registerUser(user.getPhoneNumber(), user.getName(), user.getPassword())).thenReturn(user);
+        Mockito.when(passwordEncoder.encode(Mockito.anyString())).thenReturn("encodedPassword");
 
-        // Make the API call
-        ResponseEntity<String> response = authController.registerUser(user);
+        mockMvc.perform(post("/register")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(asJsonString(user)))
+                .andExpect(status().isCreated())
+                .andExpect(content().string("User registered successfully"));
 
-        // Verify the service method was called
-        verify(userService, times(1)).registerUser(user.getPhoneNumber(), user.getName(), user.getPassword());
+        Mockito.verify(userService).registerUser("1234567890", "John Doe", "encodedPassword");
+    }
 
-        // Verify the API response
-        assertEquals(HttpStatus.CREATED, response.getStatusCode());
-        assertEquals("User registered successfully", response.getBody());
+    private static String asJsonString(Object obj) throws JsonProcessingException {
+        ObjectMapper objectMapper = new ObjectMapper();
+        return objectMapper.writeValueAsString(obj);
     }
 }

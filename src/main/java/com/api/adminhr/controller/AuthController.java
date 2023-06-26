@@ -15,9 +15,8 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthController {
     private final UserService userService;
     private final PasswordEncoder passwordEncoder;
-    private JwtTokenUtil jwtTokenUtil;
+    private final JwtTokenUtil jwtTokenUtil;
 
-    @Autowired
     public AuthController(UserService userService, PasswordEncoder passwordEncoder, JwtTokenUtil jwtTokenUtil) {
         this.userService = userService;
         this.passwordEncoder = passwordEncoder;
@@ -45,12 +44,6 @@ public class AuthController {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid credentials");
     }
 
-    // private String generateToken(String phoneNumber) {
-    // // Generate the JWT token using your preferred library (e.g., jjwt)
-    // // Set the required claims (e.g., subject, expiration)
-    // // Sign the token with your asymmetric keys or secret key
-
-    // return "JWT token"; // Replace with the actual generated token
-    // }
+    
 
 }

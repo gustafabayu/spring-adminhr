@@ -9,5 +9,11 @@ public interface UserService {
 
     User getUserByPhoneNumber(String phoneNumber);
 
+    String getNameByPhoneNumber(String phoneNumber);
+
+    boolean doesUserExist(String phoneNumber);
+
     User updateUserName(String phoneNumber, String newName);
+
+    void updateNameByPhoneNumber(String phoneNumber, String newName);
 }

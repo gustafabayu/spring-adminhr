@@ -1,74 +1,83 @@
 package com.api.adminhr.controller;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
+import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.api.adminhr.model.User;
 import com.api.adminhr.service.UserService;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import com.api.adminhr.config.JwtTokenUtil;
+import org.springframework.http.MediaType;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.Mockito.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 
+@WebMvcTest(UserController.class)
 public class UserControllerTest {
-    @Mock
+    @Autowired
+    private MockMvc mockMvc;
+
+    @MockBean
     private UserService userService;
 
-    @InjectMocks
-    private UserController userController;
+    @MockBean
+    private JwtTokenUtil jwtTokenUtil;
 
-    @BeforeEach
-    void setUp() {
-        MockitoAnnotations.openMocks(this);
+    @Test
+    public void testGetName() throws Exception {
+        String token = "Bearer mockToken";
+
+        String phoneNumber = "1234567890";
+        String name = "John Doe";
+
+        Mockito.when(jwtTokenUtil.validateToken(Mockito.anyString())).thenReturn(true);
+
+        Mockito.when(jwtTokenUtil.getPhoneNumberFromToken(Mockito.anyString())).thenReturn(phoneNumber);
+       
+        User user = new User();
+        user.setPhoneNumber(phoneNumber);
+        user.setName(name);
+        Mockito.when(userService.getNameByPhoneNumber(phoneNumber)).thenReturn(name);
+
+        mockMvc.perform(MockMvcRequestBuilders.get("/user/name")
+                .header("Authorization", token))
+                .andExpect(MockMvcResultMatchers.status().isOk())
+                .andExpect(MockMvcResultMatchers.content().string(name));
     }
 
     @Test
-    void getName_Success() {
-        // Mock input
+    public void testUpdateName() throws Exception {
+        String token = "Bearer mockToken";
+
         String phoneNumber = "1234567890";
-        String token = "valid_token";
+        String name = "John Doe";
 
-        // Mock service response
-        User user = new User();
-        user.setPhoneNumber(phoneNumber);
-        user.setName("John Doe");
-        when(userService.getUserByPhoneNumber(phoneNumber)).thenReturn(user);
+        Mockito.when(jwtTokenUtil.validateToken(Mockito.anyString())).thenReturn(true);
 
-        // Make the API call
-        ResponseEntity<String> response = userController.getName(token);
+        Mockito.when(jwtTokenUtil.getPhoneNumberFromToken(Mockito.anyString())).thenReturn(phoneNumber);
 
-        // Verify the service method was called
-        verify(userService, times(1)).getUserByPhoneNumber(phoneNumber);
+        Mockito.when(userService.doesUserExist(phoneNumber)).thenReturn(true);
 
-        // Verify the API response
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertEquals(user.getName(), response.getBody());
+        mockMvc.perform(put("/users/name")
+                .header("Authorization", token)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(asJsonString(new User(phoneNumber, name, null))))
+                .andExpect(status().isOk())
+                .andExpect(content().string("Name updated successfully"));
+
+        Mockito.verify(userService).updateNameByPhoneNumber(phoneNumber, name);
     }
 
-    @Test
-    void updateName_Success() {
-        // Mock input
-        String phoneNumber = "1234567890";
-        String newName = "Jane Smith";
-        String token = "valid_token";
-
-        // Mock service response
-        User user = new User();
-        user.setPhoneNumber(phoneNumber);
-        user.setName("John Doe");
-        when(userService.updateUserName(phoneNumber, newName)).thenReturn(user);
-
-        // Make the API call
-        ResponseEntity<String> response = userController.updateName(token, user);
-
-        // Verify the service method was called
-        verify(userService, times(1)).updateUserName(phoneNumber, newName);
-
-        // Verify the API response
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertEquals("Name updated successfully", response.getBody());
+    private static String asJsonString(Object obj) throws JsonProcessingException {
+        ObjectMapper objectMapper = new ObjectMapper();
+        return objectMapper.writeValueAsString(obj);
     }
 }

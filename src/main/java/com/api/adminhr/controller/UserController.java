@@ -2,6 +2,7 @@ package com.api.adminhr.controller;
 
 import com.api.adminhr.model.User;
 import com.api.adminhr.service.UserService;
+import com.api.adminhr.config.JwtTokenUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -11,25 +12,35 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/users")
 public class UserController {
     private final UserService userService;
+    private final JwtTokenUtil jwtTokenUtil;
 
-    @Autowired
-    public UserController(UserService userService) {
+    public UserController(UserService userService, JwtTokenUtil jwtTokenUtil) {
         this.userService = userService;
+        this.jwtTokenUtil = jwtTokenUtil;
     }
 
     @GetMapping("/name")
     public ResponseEntity<String> getName(@RequestHeader("Authorization") String token) {
-        // Extract phone number from JWT token
-        // Check phone number exists
-        // Get the name
-        return ResponseEntity.ok("User's name");
+       String phoneNumber = jwtTokenUtil.extractPhoneNumberFromToken(token);
+
+        if (userService.doesUserExist(phoneNumber)) {
+            String name = userService.getNameByPhoneNumber(phoneNumber);
+            return ResponseEntity.ok(name);
+        } else {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Phone number not found");
+        }
+
     }
 
     @PutMapping("/name")
     public ResponseEntity<String> updateName(@RequestHeader("Authorization") String token, @RequestBody User user) {
-        // Extract phone number from JWT token
-        // Check phone number exists
-        // Update the name
-        return ResponseEntity.ok("Name updated successfully");
+        String phoneNumber = jwtTokenUtil.extractPhoneNumberFromToken(token);
+
+        if (userService.doesUserExist(phoneNumber)) {
+            userService.updateNameByPhoneNumber(phoneNumber, user.getName());
+            return ResponseEntity.ok("Name updated successfully");
+        } else {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Phone number not found");
+        }
     }
 }
