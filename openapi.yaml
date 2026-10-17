@@ -1,0 +1,221 @@
+openapi: 3.1.0
+info:
+  title: Admin HR API
+  version: 1.0.0
+  description: |
+    API for registering and authenticating HR users and retrieving or updating
+    the name of the user represented by an access token.
+servers:
+  - url: http://localhost:8080
+    description: Local application
+tags:
+  - name: Authentication
+    description: User registration and login
+  - name: Users
+    description: Operations for the authenticated user
+paths:
+  /register:
+    post:
+      tags:
+        - Authentication
+      security: []
+      operationId: registerUser
+      summary: Register a user
+      description: |
+        Registers a user and stores a BCrypt-hashed password. Phone number and
+        password constraints are enforced by the service. Invalid registration
+        data currently raises an unhandled server exception.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterRequest"
+            example:
+              phoneNumber: "081234567890"
+              name: "Alex Example"
+              password: "Admin123"
+      responses:
+        "400":
+          description: Request body is missing or is not valid JSON
+        "201":
+          description: User registered successfully
+          content:
+            text/plain:
+              schema:
+                type: string
+              example: User registered successfully
+        "500":
+          description: Invalid registration data or a persistence error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /login:
+    post:
+      tags:
+        - Authentication
+      security: []
+      operationId: login
+      summary: Log in
+      description: |
+        Authenticates a user and returns a signed JWT as a plain-text response.
+        The token is accepted as the raw value of the Authorization header on
+        the user endpoints; do not prefix it with "Bearer ".
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+            example:
+              phoneNumber: "081234567890"
+              password: "Admin123"
+      responses:
+        "400":
+          description: Request body is missing or is not valid JSON
+        "200":
+          description: Signed JWT
+          content:
+            text/plain:
+              schema:
+                type: string
+              example: eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIwODEyMzQ1Njc4OTAiLCJleHAiOjE3MDAwMDAwMDB9.signature
+        "401":
+          description: Phone number or password is incorrect
+          content:
+            text/plain:
+              schema:
+                type: string
+              example: Invalid credentials
+  /users/name:
+    get:
+      tags:
+        - Users
+      operationId: getUserName
+      summary: Get the authenticated user's name
+      security:
+        - jwtHeader: []
+      responses:
+        "200":
+          description: User name
+          content:
+            text/plain:
+              schema:
+                type: string
+              example: Alex Example
+        "400":
+          description: Authorization header is missing
+        "404":
+          description: No user exists for the phone number in the token
+          content:
+            text/plain:
+              schema:
+                type: string
+              example: Phone number not found
+        "500":
+          description: Authorization token cannot be parsed
+    put:
+      tags:
+        - Users
+      operationId: updateUserName
+      summary: Update the authenticated user's name
+      security:
+        - jwtHeader: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateNameRequest"
+            example:
+              name: "Alex Example"
+      responses:
+        "200":
+          description: Name updated successfully
+          content:
+            text/plain:
+              schema:
+                type: string
+              example: Name updated successfully
+        "400":
+          description: Authorization header is missing or request body is invalid
+        "404":
+          description: No user exists for the phone number in the token
+          content:
+            text/plain:
+              schema:
+                type: string
+              example: Phone number not found
+        "500":
+          description: Authorization token cannot be parsed
+components:
+  securitySchemes:
+    jwtHeader:
+      type: apiKey
+      in: header
+      name: Authorization
+      description: Raw JWT returned by POST /login; do not add a Bearer prefix.
+  schemas:
+    RegisterRequest:
+      type: object
+      required:
+        - phoneNumber
+        - name
+        - password
+      properties:
+        phoneNumber:
+          type: string
+          minLength: 10
+          maxLength: 13
+          pattern: "^08[0-9]{8,11}$"
+          description: Phone number must start with 08 and contain 10–13 digits.
+          example: "081234567890"
+        name:
+          type: string
+          minLength: 1
+          maxLength: 60
+          example: Alex Example
+        password:
+          type: string
+          format: password
+          minLength: 6
+          maxLength: 16
+          pattern: "^(?=.*[A-Z])(?=.*[0-9]).*$"
+          description: Password must contain at least one uppercase letter and one digit.
+          example: Admin123
+    LoginRequest:
+      type: object
+      required:
+        - phoneNumber
+        - password
+      properties:
+        phoneNumber:
+          type: string
+          example: "081234567890"
+        password:
+          type: string
+          format: password
+          example: Admin123
+    UpdateNameRequest:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          description: New display name. The update endpoint does not currently validate its length or blankness.
+          example: Alex Example
+    Error:
+      type: object
+      description: Spring Boot error response for an unhandled server exception.
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        status:
+          type: integer
+        error:
+          type: string
+        path:
+          type: string
