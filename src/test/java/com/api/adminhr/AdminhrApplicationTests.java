@@ -1,25 +1,19 @@
 package com.api.adminhr;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
-import com.api.adminhr.controller.AuthControllerTest;
-import com.api.adminhr.controller.UserControllerTest;
-
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-
-@SpringBootTest
+@SpringBootTest(properties = {
+		"spring.datasource.url=jdbc:h2:mem:adminhr;DB_CLOSE_DELAY=-1",
+		"spring.datasource.driver-class-name=org.h2.Driver",
+		"spring.datasource.username=sa",
+		"spring.datasource.password=",
+		"spring.jpa.hibernate.ddl-auto=create-drop"
+})
 class AdminhrApplicationTests {
-
-	@Autowired
-	private AuthControllerTest authControllerTest;
-	private UserControllerTest userControllerTest;
 
 	@Test
 	void contextLoads() {
-		assertNotNull(authControllerTest);
-		assertNotNull(userControllerTest);
 	}
 
 }

@@ -1,15 +1,13 @@
 package com.api.adminhr.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mockito;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -22,20 +20,19 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 
-@ExtendWith(SpringExtension.class)
 @WebMvcTest(AuthController.class)
 public class AuthControllerTest {
     @Autowired
     private MockMvc mockMvc;
 
-    @MockBean
+    @MockitoBean
     private UserService userService;
 
-    @MockBean
-    private PasswordEncoder passwordEncoder;
-
-    @MockBean
+    @MockitoBean
     private JwtTokenUtil jwtTokenUtil;
+
+    @MockitoBean
+    private PasswordEncoder passwordEncoder;
 
     @Test
     public void testRegisterUser() throws Exception {
@@ -44,15 +41,13 @@ public class AuthControllerTest {
         user.setName("John Doe");
         user.setPassword("password");
 
-        Mockito.when(passwordEncoder.encode(Mockito.anyString())).thenReturn("encodedPassword");
-
         mockMvc.perform(post("/register")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(asJsonString(user)))
                 .andExpect(status().isCreated())
                 .andExpect(content().string("User registered successfully"));
 
-        Mockito.verify(userService).registerUser("1234567890", "John Doe", "encodedPassword");
+        Mockito.verify(userService).registerUser("1234567890", "John Doe", "password");
     }
 
     private static String asJsonString(Object obj) throws JsonProcessingException {

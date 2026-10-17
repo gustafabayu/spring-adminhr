@@ -1,8 +1,8 @@
 package com.api.adminhr.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
@@ -25,10 +25,10 @@ public class UserControllerTest {
     @Autowired
     private MockMvc mockMvc;
 
-    @MockBean
+    @MockitoBean
     private UserService userService;
 
-    @MockBean
+    @MockitoBean
     private JwtTokenUtil jwtTokenUtil;
 
     @Test
@@ -38,16 +38,11 @@ public class UserControllerTest {
         String phoneNumber = "1234567890";
         String name = "John Doe";
 
-        Mockito.when(jwtTokenUtil.validateToken(Mockito.anyString())).thenReturn(true);
-
-        Mockito.when(jwtTokenUtil.getPhoneNumberFromToken(Mockito.anyString())).thenReturn(phoneNumber);
-       
-        User user = new User();
-        user.setPhoneNumber(phoneNumber);
-        user.setName(name);
+        Mockito.when(jwtTokenUtil.extractPhoneNumberFromToken(Mockito.anyString())).thenReturn(phoneNumber);
+        Mockito.when(userService.doesUserExist(phoneNumber)).thenReturn(true);
         Mockito.when(userService.getNameByPhoneNumber(phoneNumber)).thenReturn(name);
 
-        mockMvc.perform(MockMvcRequestBuilders.get("/user/name")
+        mockMvc.perform(MockMvcRequestBuilders.get("/users/name")
                 .header("Authorization", token))
                 .andExpect(MockMvcResultMatchers.status().isOk())
                 .andExpect(MockMvcResultMatchers.content().string(name));
@@ -60,9 +55,7 @@ public class UserControllerTest {
         String phoneNumber = "1234567890";
         String name = "John Doe";
 
-        Mockito.when(jwtTokenUtil.validateToken(Mockito.anyString())).thenReturn(true);
-
-        Mockito.when(jwtTokenUtil.getPhoneNumberFromToken(Mockito.anyString())).thenReturn(phoneNumber);
+        Mockito.when(jwtTokenUtil.extractPhoneNumberFromToken(Mockito.anyString())).thenReturn(phoneNumber);
 
         Mockito.when(userService.doesUserExist(phoneNumber)).thenReturn(true);
 
